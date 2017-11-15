@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+body { 
+    font: 12px Arial;
+}
+
+path {
+    stroke-width: 2;
+    fill: none;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: grey;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+</style>
+
+<body>
+Loads the markov_model.js script which runs a simple markov SIR model 40 times and plots the average output.
+
+<br>
+
+<!-- Load SIR model -->
+<script type="text/javascript" src="markov_model.js"></script>
+
+<!-- Load d3.js library -->
+<script src="http://d3js.org/d3.v3.min.js"></script>
+
+<script>
+// Set the dimensions of the canvas / graph
+var margin = {top: 30, right: 20, bottom: 30, left: 50},
+    width = 400 - margin.left - margin.right,
+    height = 270 - margin.top - margin.bottom;
+
+// Set the ranges
+var x = d3.scale.linear().range([0, width]);
+var y = d3.scale.linear().range([height, 0]);
+
+// Define the axes
+var xAxis = d3.svg.axis().scale(x)
+    .orient("bottom").ticks(5);
+
+var yAxis = d3.svg.axis().scale(y)
+    .orient("left").ticks(5);
+
+// Define the line
+var valuelineS = d3.svg.line()
+    .x(function(d) { return x(d.t); })
+    .y(function(d) { return y(d.S); });
+
+var valuelineI = d3.svg.line()
+    .x(function(d) { return x(d.t); })
+    .y(function(d) { return y(d.I); });
+
+var valuelineR = d3.svg.line()
+    .x(function(d) { return x(d.t); })
+    .y(function(d) { return y(d.R); });
+    
+// Adds the svg canvas
+var svg2 = d3.select("body")
+    .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+        .attr("transform", 
+              "translate(" + margin.left + "," + margin.top + ")");
+
+// Run the model
+var m = new MarkovModel(0.06, 1)
+var data = m.average_output(40)
+
+// Scale the range of the data
+x.domain([0, d3.max(data, function(d) { return d.t; })]);
+y.domain([0, d3.max(data, function(d) { return d.S; })]);
+
+// Add the valueline path.
+svg2.append("path")
+    .attr("class", "lineS")
+    .attr("d", valuelineS(data))
+    .attr("stroke", "green");
+
+svg2.append("path")
+    .attr("class", "lineI")
+    .attr("d", valuelineI(data))
+    .attr("stroke", "red");
+
+svg2.append("path")
+    .attr("class", "lineR")
+    .attr("d", valuelineR(data))
+    .attr("stroke", "blue");
+
+// Add the X Axis
+svg2.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis);
+
+// label the X axis
+svg2.append("text")
+    .attr("x", width / 2)
+    .attr("y", height + margin.bottom)
+    .style("text-anchor", "middle")
+    .text("Time");
+
+// Add the Y Axis
+svg2.append("g")
+    .attr("class", "y axis")
+    .call(yAxis);
+
+// label the Y axis
+svg2.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("x", 0 - (height / 2))
+    .attr("y", 0 - margin.left)
+    .attr("dy", "1em")
+    .style("text-anchor", "middle")
+    .text("Population");
+
+function set_parameters_markov() {
+    var gamma = document.getElementById("input_gamma_markov").value;
+    var beta = document.getElementById("input_beta_markov").value;
+    m = new MarkovModel(beta,gamma);
+    data = m.average_output(40);
+
+    x.domain([0, d3.max(data, function(d) { return d.t; })]);
+    y.domain([0, d3.max(data, function(d) { return d.S; })]);
+
+    svg2 = d3.select("body").transition();
+
+    svg2.select(".lineS").duration(1200).attr("d",valuelineS(data))
+    svg2.select(".lineI").duration(1200).attr("d",valuelineI(data))
+    svg2.select(".lineR").duration(1200).attr("d",valuelineR(data))
+    svg2.select(".x.axis").duration(1200).call(xAxis)
+    svg2.select(".y.axis").duration(1200).call(yAxis)
+}
+</script>
+
+<table> <tr> <th>
+    Beta: </th> <th> <input type="number" name="beta" value="0.06" step=".01" id="input_beta_markov" onchange="set_parameters_markov()"></th> </tr> <tr> <th>
+    Gamma: </th> <th> <input type="number" name="gamma" value="1" step=".01" id="input_gamma_markov" onchange="set_parameters_markov()"> </th> </tr>
+</table>
+
+</body>
